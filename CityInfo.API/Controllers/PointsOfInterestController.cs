@@ -3,31 +3,56 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CityInfo.API.Models;
+using CityInfo.API.Services;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace CityInfo.API.Controllers
 {
     [Route("api/cities")]
     public class PointsOfInterestController : Controller
     {
+        private ILogger<PointsOfInterestController> _logger;
+        private IMailService _mailService;
+
+        public PointsOfInterestController(ILogger<PointsOfInterestController> logger,
+            IMailService mailService)
+        {
+            _logger = logger;
+            _mailService = mailService;
+        }
+
         // GET api/cities/1/pointsOfInterest
         [HttpGet("{cityId}/pointsOfInterest")] 
-        public IActionResult Index(int cityId)
+        public IActionResult GetPointsOfInterest(int cityId)
         {
-            var city = CitiesDataStore.Current.Cities.SingleOrDefault(c => c.Id == cityId);
-
-            if (city == null)
+            try
             {
-                return NotFound();
-            }
+                var city = CitiesDataStore.Current.Cities.SingleOrDefault(c => c.Id == cityId);
 
-            return Ok(city.PointOfInterest);
+                if (city == null)
+                {
+                    // The param in .LogInformation() makes use of String Interpolation. It replaces {cityId} with value.
+                    _logger.LogInformation($"City with id {cityId} wasn't found when accessing points of interest");
+                    return NotFound();
+                }
+
+                return Ok(city.PointOfInterest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical($"Exception while getting points of interest for city with id {cityId}.", ex);
+
+                // This error message will return to API consumer, along with HTTP 500. Recommended not to pass stack trace.
+                return StatusCode(500, "A problem happened while handling your request.");
+            }
+            
         }
 
         // GET api/cities/1/pointsOfInterest/2
         [HttpGet("{cityId}/pointsOfInterest/{id}")]
-        public IActionResult Index(int cityId, int id)
+        public IActionResult GetPointsOfInterest(int cityId, int id)
         {
             var city = CitiesDataStore.Current.Cities.SingleOrDefault(c => c.Id == cityId);
 
@@ -217,6 +242,10 @@ namespace CityInfo.API.Controllers
             }
 
             city.PointOfInterest.Remove(pointOfInterestFromStore);
+
+            // call mail service to send email
+            _mailService.Send("Point of interest deleted.", $"Point of interest {pointOfInterestFromStore.Name} " +
+                                                            $"with id {pointOfInterestFromStore.Id} was deleted.");
 
             return NoContent();
         }
