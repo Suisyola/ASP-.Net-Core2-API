@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CityInfo.API.Entities;
 using CityInfo.API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,11 +19,11 @@ namespace CityInfo.API
 {
     public class Startup
     {
-        
+
         // Start of Implementation for usage of configuration. This is for ASP .Net Core 1
         /*
         public static IConfigurationRoot Configuration;
-
+        
         public Startup(IHostingEnvironment env)
         {
             // This block of code is for allowing usage of config file, appSettings.json or appSettings.Production.json, in the application
@@ -33,14 +35,16 @@ namespace CityInfo.API
                 // reloadOnChange:true indicates that appSettings.json must be reloaded on change of settings
                 .AddJsonFile("appSettings.json", optional: false, reloadOnChange: true)
                 // This adds Production config file. Order is important. If settings appear on both appSettings and appSettings.Production, the value will take from appSettings.Production
-                .AddJsonFile($"appSettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);
+                .AddJsonFile($"appSettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                // Retrieve values from Environment Variables if it is used in application. e.g. connectionStrings:cityInfoDBConnectionString
+                .AddEnvironmentVariables();
 
             // Create a configuration and store in the Configuration variable
             Configuration = builder.Build();
         }
         */
         // End of Implementation for usage of configuration. This is for ASP .Net Core 1
-        
+
 
         public static IConfiguration Configuration { get; private set; }
 
@@ -74,10 +78,13 @@ namespace CityInfo.API
 #else
             services.AddTransient<IMailService, CloudMailService>();
 #endif
+            var connectionString = Startup.Configuration["connectionStrings:cityInfoDBConnectionString"];
+            services.AddDbContext<CityInfoContext>(o => o.UseSqlServer(connectionString));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory,
+            CityInfoContext cityInfoContext)
         {
             // No need to add these loggers in ASP.NET Core 2.0: the call to WebHost.CreateDefaultBuilder(args) 
             // in the Program class takes care of that.
@@ -96,6 +103,9 @@ namespace CityInfo.API
             {
                 app.UseExceptionHandler();
             }
+
+            // Seed data, if required
+            cityInfoContext.EnsureSeedDataForContext();
 
             // Use simple status code page for HTTP response
             app.UseStatusCodePages();
