@@ -22,7 +22,7 @@ namespace CityInfo.API.Models
                     Id = 1,
                     Name = "New York City",
                     Description = "Some description for New York City",
-                    PointOfInterest =  new List<PointOfInterestDto>()
+                    PointsOfInterest =  new List<PointOfInterestDto>()
                     {
                         new PointOfInterestDto()
                         {
@@ -43,7 +43,7 @@ namespace CityInfo.API.Models
                     Id = 2,
                     Name = "Antwerp",
                     Description = "Some description for Antwerp",
-                    PointOfInterest =  new List<PointOfInterestDto>()
+                    PointsOfInterest =  new List<PointOfInterestDto>()
                     {
                         new PointOfInterestDto()
                         {
@@ -58,7 +58,7 @@ namespace CityInfo.API.Models
                     Id = 3,
                     Name = "Paris",
                     Description = "Some description for Paris",
-                    PointOfInterest =  new List<PointOfInterestDto>()
+                    PointsOfInterest =  new List<PointOfInterestDto>()
                     {
                         new PointOfInterestDto()
                         {
